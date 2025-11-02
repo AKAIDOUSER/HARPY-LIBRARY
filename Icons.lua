@@ -1,8 +1,8 @@
 -- Banco de Ícones Kaliu Mods
 return {
     ["Home"] = 7436811843,
-    ["Settings"] = 7059346373,
-    ["User"] = 6031075932,
+    ["Settings"] = 6663675885,
+    ["User"] = 7074334150,
     ["Users"] = 6031075933,
     ["Search"] = 6031075934,
     ["Menu"] = 6031075935,
