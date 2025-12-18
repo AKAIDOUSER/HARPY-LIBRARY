@@ -9,8 +9,8 @@ function IconsLibrary:LoadIcons(iconsUrl)
     
     if success and type(result) == "table" then
         IconsLibrary.Icons = result
-        print("✅ Ícones carregados com sucesso! Total: " .. #result)
-        return true
+        --print("✅ Ícones carregados com sucesso! Total: " .. #result)
+        return print
     else
         warn("❌ Falha ao carregar ícones: " .. tostring(result))
         IconsLibrary.Icons = {}
