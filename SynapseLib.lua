@@ -2660,7 +2660,7 @@ function Lib:Window(Settings)
                     end
                 }
                 
-                function GetDisplayValue(value)
+                local function GetDisplayValue(value)
                     local method = DisplayMethods[Slider.Settings.DisplayMethod] or DisplayMethods.Value
                     
                     if Slider.Settings.DisplayMethod == "Percent" then
@@ -2820,7 +2820,7 @@ function Lib:Window(Settings)
                 Lib:AutoUpdateText(Title_Slider)
                 
                 -- Atualizar visual do slider
-                function UpdateSliderVisual()
+                local function UpdateSliderVisual()
                     local min = Slider.Settings.Minimum
                     local max = Slider.Settings.Maximum
                     local value = Slider.Value
@@ -2841,7 +2841,7 @@ function Lib:Window(Settings)
                 end
                 
                 -- Função para atualizar valor do slider
-                function SetValue(newValue, fromUserInput)
+                local function SetValue(newValue, fromUserInput)
                     -- Clamp do valor
                     local min = Slider.Settings.Minimum
                     local max = Slider.Settings.Maximum
@@ -2865,9 +2865,11 @@ function Lib:Window(Settings)
                         UpdateSliderVisual()
                         
                         -- Chamar callback se foi input do usuário
-                        if fromUserInput then
-                            pcall(Slider.Settings.Callback, newValue)
-                        end
+                        task.spawn(function()
+                            if fromUserInput then
+                                pcall(Slider.Settings.Callback, newValue)
+                            end
+                        end)
                     end
                 end
                 
@@ -2875,7 +2877,7 @@ function Lib:Window(Settings)
                 local isDragging = false
                 
                 -- Função para converter posição do mouse para valor
-                function GetValueFromPosition(positionX)
+                local function GetValueFromPosition(positionX)
                     local absolutePosition = Bottom.AbsolutePosition.X
                     local absoluteSize = Bottom.AbsoluteSize.X
                     
@@ -2892,53 +2894,47 @@ function Lib:Window(Settings)
                 end
                 
                 -- Função para iniciar arrasto
-                function StartDrag(input)
-                    Spawn(function()
-                        isDragging = true
+                local function StartDrag(input)
+                    isDragging = true
                     
-                        -- Feedback visual
-                        Thumb.BackgroundColor3 = Tema.ThumbHover or Color3.fromRGB(200, 200, 200)
-                        Slider.Active_S = true
-                        
-                        -- Atualizar imediatamente para a posição do click
-                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                            local value = GetValueFromPosition(input.Position.X)
-                            SetValue(value, true)
-                        end
-                    end)
+                    -- Feedback visual
+                    Thumb.BackgroundColor3 = Tema.ThumbHover or Color3.fromRGB(200, 200, 200)
+                    Slider.Active_S = true
+                    
+                    -- Atualizar imediatamente para a posição do click
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                        local value = GetValueFromPosition(input.Position.X)
+                        SetValue(value, true)
+                    end
                 end
                 
                 -- Função para atualizar durante arrasto
-                function UpdateDrag(input)
-                    Spawn(function()
-                        if not isDragging then return end
-                        
-                        -- Verificar se é mouse movement ou touch
-                        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-                            local value = GetValueFromPosition(input.Position.X)
-                            SetValue(value, true)
-                        end
-                    end)
+                local function UpdateDrag(input)
+                    if not isDragging then return end
+                    
+                    -- Verificar se é mouse movement ou touch
+                    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                        local value = GetValueFromPosition(input.Position.X)
+                        SetValue(value, true)
+                    end
                 end
                 
                 -- Função para parar arrasto
-                function StopDrag()
-                    Spawn(function()
-                        if isDragging then
-                            isDragging = false
-                            
-                            -- Resetar feedback visual
-                            Thumb.BackgroundColor3 = Tema.Thumb
-                            Slider.Active_S = false
-                        end
-                    end)
+                local function StopDrag()
+                    if isDragging then
+                        isDragging = false
+                        
+                        -- Resetar feedback visual
+                        Thumb.BackgroundColor3 = Tema.Thumb
+                        Slider.Active_S = false
+                    end
                 end
                 
                 -- Obter serviço de input
                 local UserInputService = game:GetService("UserInputService")
                 
                 -- Conectar eventos de input
-                function SetupInputEvents()
+                local function SetupInputEvents()
                     -- Conexão para InputBegan (mouse click e touch)
                     Slider._connections.InputBegan = SliderButton.InputBegan:Connect(function(input)
                         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -2994,9 +2990,7 @@ function Lib:Window(Settings)
                 end
                 
                 -- Configurar eventos
-                Spawn(function()
-                    SetupInputEvents()
-                end)
+                SetupInputEvents()
                 
                 -- Métodos públicos
                 function Slider:SetValue(newValue)
@@ -3026,9 +3020,8 @@ function Lib:Window(Settings)
                     Slider_Element:Destroy()
                 end
                 
-                Spawn(function()
-                    UpdateSliderVisual()
-                end)
+                -- Inicializar com valor padrão
+                UpdateSliderVisual()
                 
                 -- Registrar na biblioteca se tiver flag
                 if Flag then
@@ -3036,7 +3029,7 @@ function Lib:Window(Settings)
                 end
                 
                 return Slider
-            end
+                end
             
             function Section:Colorpicker(Flag, Settings)
                 local Colorpicker = {Settings = Settings, IgnoreConfig = false, Class = "Colorpicker"}
@@ -3260,40 +3253,38 @@ function Lib:Window(Settings)
                 local closeConnection
                 
                 -- FUNÇÕES PRINCIPAIS (CÓDIGO ORIGINAL MANTIDO)
-                function sendColorCallback(color)
-                    Spawn(function()
-                        currentColor = color
-                        local r, g, b = math.floor(color.R * 255), math.floor(color.G * 255), math.floor(color.B * 255)
+                local function sendColorCallback(color)
+                    currentColor = color
+                    local r, g, b = math.floor(color.R * 255), math.floor(color.G * 255), math.floor(color.B * 255)
+                    task.spawn(function()
                         Colorpicker.Settings.Callback(Color3.fromRGB(r, g, b))
                     end)
                 end
                 
-                function updateCConteinerColor(input)
-                    Spawn(function()
-                        local mousePos = input.Position
-                        if not Colorpicker_Selector then return end
+                local function updateCConteinerColor(input)
+                    local mousePos = input.Position
+                    if not Colorpicker_Selector then return end
+                    
+                    local selectorPosition = Colorpicker_Selector.AbsolutePosition
+                    local selectorSize = Colorpicker_Selector.AbsoluteSize
+                
+                    if mousePos.X >= selectorPosition.X and mousePos.Y >= selectorPosition.Y and
+                        mousePos.X <= selectorPosition.X + selectorSize.X and mousePos.Y <= selectorPosition.Y + selectorSize.Y then
                         
-                        local selectorPosition = Colorpicker_Selector.AbsolutePosition
-                        local selectorSize = Colorpicker_Selector.AbsoluteSize
-                    
-                        if mousePos.X >= selectorPosition.X and mousePos.Y >= selectorPosition.Y and
-                            mousePos.X <= selectorPosition.X + selectorSize.X and mousePos.Y <= selectorPosition.Y + selectorSize.Y then
-                            
-                            sat = math.clamp((mousePos.X - selectorPosition.X) / selectorSize.X, 0, 1)
-                            brightness = 1 - math.clamp((mousePos.Y - selectorPosition.Y) / selectorSize.Y, 0, 1)
-                    
-                            currentColor = Color3.fromHSV(hue, sat, brightness)
-                            View_F.BackgroundColor3 = currentColor
-                            sendColorCallback(currentColor)
-                            
-                            local selectorX = math.clamp(mousePos.X - selectorPosition.X, 2, selectorSize.X - 2)
-                            local selectorY = math.clamp(mousePos.Y - selectorPosition.Y, 2, selectorSize.Y - 2)
-                            Cursor.Position = UDim2.fromOffset(selectorX - 4, selectorY - 4)
-                        end
-                    end)
+                        sat = math.clamp((mousePos.X - selectorPosition.X) / selectorSize.X, 0, 1)
+                        brightness = 1 - math.clamp((mousePos.Y - selectorPosition.Y) / selectorSize.Y, 0, 1)
+                
+                        currentColor = Color3.fromHSV(hue, sat, brightness)
+                        View_F.BackgroundColor3 = currentColor
+                        sendColorCallback(currentColor)
+                        
+                        local selectorX = math.clamp(mousePos.X - selectorPosition.X, 2, selectorSize.X - 2)
+                        local selectorY = math.clamp(mousePos.Y - selectorPosition.Y, 2, selectorSize.Y - 2)
+                        Cursor.Position = UDim2.fromOffset(selectorX - 4, selectorY - 4)
+                    end
                 end
                 
-                function updateColorSlider(input)
+                local function updateColorSlider(input)
                     local mousePos = input.Position
                     if not Colorpicker_RainbowBar then return end
                     
@@ -3316,188 +3307,174 @@ function Lib:Window(Settings)
                     sendColorCallback(currentColor)
                 end
                 
-                function startRainbowMode()
-                    Spawn(function()
-                        if rainbowConnection then
-                            rainbowConnection:Disconnect()
+                local function startRainbowMode()
+                    if rainbowConnection then
+                        rainbowConnection:Disconnect()
+                    end
+                    
+                    rainbowConnection = RunService.Heartbeat:Connect(function(deltaTime)
+                        if not rainbowMode then
+                            if rainbowConnection then
+                                rainbowConnection:Disconnect()
+                                rainbowConnection = nil
+                            end
+                            return
                         end
                         
-                        rainbowConnection = RunService.Heartbeat:Connect(function(deltaTime)
-                            if not rainbowMode then
-                                if rainbowConnection then
-                                    rainbowConnection:Disconnect()
-                                    rainbowConnection = nil
-                                end
-                                return
-                            end
-                            
-                            hue = (hue + rainbowSpeed * deltaTime) % 1
-                            
-                            if Colorpicker_Window.Visible then
-                                Rainbow_Cursor.Position = UDim2.new(0.5, 0, hue, 0)
-                                UIGradient.Color = ColorSequence.new{
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 255, 255)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromHSV(hue, 1, 1))
-                                }
-                            end
-                            
-                            currentColor = Color3.fromHSV(hue, 1, 1)
-                            View_F.BackgroundColor3 = currentColor
-                            sendColorCallback(currentColor)
-                        end)
+                        hue = (hue + rainbowSpeed * deltaTime) % 1
+                        
+                        if Colorpicker_Window.Visible then
+                            Rainbow_Cursor.Position = UDim2.new(0.5, 0, hue, 0)
+                            UIGradient.Color = ColorSequence.new{
+                                ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 255, 255)),
+                                ColorSequenceKeypoint.new(1.00, Color3.fromHSV(hue, 1, 1))
+                            }
+                        end
+                        
+                        currentColor = Color3.fromHSV(hue, 1, 1)
+                        View_F.BackgroundColor3 = currentColor
+                        sendColorCallback(currentColor)
                     end)
                 end
                 
-                function setInitialColor(color)
-                    Spawn(function()
-                        hue, sat, brightness = color:ToHSV()
+                local function setInitialColor(color)
+                    hue, sat, brightness = color:ToHSV()
                     
-                        UIGradient.Color = ColorSequence.new{
-                            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-                            ColorSequenceKeypoint.new(1, Color3.fromHSV(hue, 1, 1))
-                        }
-                        
-                        if Colorpicker_Selector and Colorpicker_Selector.AbsoluteSize then
-                            local selectorSize = Colorpicker_Selector.AbsoluteSize
-                            Cursor.Position = UDim2.new(sat, -4, 1 - brightness, -4)
-                        end
-                        
-                        if Colorpicker_RainbowBar and Colorpicker_RainbowBar.AbsoluteSize then
-                            local sliderSize = Colorpicker_RainbowBar.AbsoluteSize
-                            Rainbow_Cursor.Position = UDim2.new(0.5, 0, hue, 0)
-                        end
-                        
-                        View_F.BackgroundColor3 = color
-                        currentColor = color
-                        sendColorCallback(color)
-                    end)
+                    UIGradient.Color = ColorSequence.new{
+                        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+                        ColorSequenceKeypoint.new(1, Color3.fromHSV(hue, 1, 1))
+                    }
+                    
+                    if Colorpicker_Selector and Colorpicker_Selector.AbsoluteSize then
+                        local selectorSize = Colorpicker_Selector.AbsoluteSize
+                        Cursor.Position = UDim2.new(sat, -4, 1 - brightness, -4)
+                    end
+                    
+                    if Colorpicker_RainbowBar and Colorpicker_RainbowBar.AbsoluteSize then
+                        local sliderSize = Colorpicker_RainbowBar.AbsoluteSize
+                        Rainbow_Cursor.Position = UDim2.new(0.5, 0, hue, 0)
+                    end
+                    
+                    View_F.BackgroundColor3 = color
+                    currentColor = color
+                    sendColorCallback(color)
                 end
                 
                 -- SISTEMA DE CONEXÕES (CÓDIGO ORIGINAL MANTIDO)
-                function connectSelectorInput()
-                    Spawn(function()
-                        if selectorInputConnection then selectorInputConnection:Disconnect() end
-                        if selectorMoveConnection then selectorMoveConnection:Disconnect() end
-                        if selectorEndConnection then selectorEndConnection:Disconnect() end
-                        
-                        selectorInputConnection = Colorpicker_Selector.InputBegan:Connect(function(input)
-                            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                                draggingCConteiner = true
-                                updateCConteinerColor(input)
-                            end
-                        end)
-                        
-                        selectorMoveConnection = UserInputService.InputChanged:Connect(function(input)
-                            if draggingCConteiner and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                                updateCConteinerColor(input)
-                            end
-                        end)
-                        
-                        selectorEndConnection = UserInputService.InputEnded:Connect(function(input)
-                            if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
-                                draggingCConteiner = false
-                            end
-                        end)
-                    end)
-                end
-                
-                function connectRainbowInput()
-                    Spawn(function()
-                        if rainbowInputConnection then rainbowInputConnection:Disconnect() end
-                        if rainbowMoveConnection then rainbowMoveConnection:Disconnect() end
-                        if rainbowEndConnection then rainbowEndConnection:Disconnect() end
-                        
-                        rainbowInputConnection = Colorpicker_RainbowBar.InputBegan:Connect(function(input)
-                            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                                draggingColor = true
-                                updateColorSlider(input)
-                            end
-                        end)
-                        
-                        rainbowMoveConnection = UserInputService.InputChanged:Connect(function(input)
-                            if draggingColor and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                                updateColorSlider(input)
-                            end
-                        end)
-                        
-                        rainbowEndConnection = UserInputService.InputEnded:Connect(function(input)
-                            if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
-                                draggingColor = false
-                            end
-                        end)
-                    end)
-                end
-                
-                function closeColorPicker()
-                    Spawn(function()
-                        isColorPickerOpen = false
+                local function connectSelectorInput()
+                    if selectorInputConnection then selectorInputConnection:Disconnect() end
+                    if selectorMoveConnection then selectorMoveConnection:Disconnect() end
+                    if selectorEndConnection then selectorEndConnection:Disconnect() end
                     
-                        TweenService:Create(Colorpicker_Window, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                            Size = UDim2.new(1, 0, 0, 0)
-                        }):Play()
-                        
-                        delay(0.21, function()
-                            if not isColorPickerOpen then
-                                Colorpicker_Window.Visible = false
-                            end
-                        end)
-                        
-                        -- Desconectar eventos
-                        if selectorInputConnection then selectorInputConnection:Disconnect() end
-                        if selectorMoveConnection then selectorMoveConnection:Disconnect() end
-                        if selectorEndConnection then selectorEndConnection:Disconnect() end
-                        if rainbowInputConnection then rainbowInputConnection:Disconnect() end
-                        if rainbowMoveConnection then rainbowMoveConnection:Disconnect() end
-                        if rainbowEndConnection then rainbowEndConnection:Disconnect() end
-                        if closeConnection then closeConnection:Disconnect() end
+                    selectorInputConnection = Colorpicker_Selector.InputBegan:Connect(function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                            draggingCConteiner = true
+                            updateCConteinerColor(input)
+                        end
+                    end)
+                    
+                    selectorMoveConnection = UserInputService.InputChanged:Connect(function(input)
+                        if draggingCConteiner and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                            updateCConteinerColor(input)
+                        end
+                    end)
+                    
+                    selectorEndConnection = UserInputService.InputEnded:Connect(function(input)
+                        if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+                            draggingCConteiner = false
+                        end
                     end)
                 end
                 
-                function openColorPicker()
-                    Spawn(function()
-                        isColorPickerOpen = true
-                        Colorpicker_Window.Visible = true
-                        
-                        TweenService:Create(Colorpicker_Window, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                            Size = UDim2.new(1, 0, 0, 125),
-                        }):Play()
-                        
-                        connectSelectorInput()
-                        connectRainbowInput()
-                        
-                        -- Fechar ao clicar fora (ADAPTADO para sua lib)
-                        closeConnection = UserInputService.InputBegan:Connect(function(input)
-                            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                                local mousePos = input.Position
-                                local colorpickerPos = Colorpicker_F.AbsolutePosition
-                                local colorpickerSize = Colorpicker_F.AbsoluteSize
-                                local windowPos = Colorpicker_Window.AbsolutePosition
-                                local windowSize = Colorpicker_Window.AbsoluteSize
-                                
-                                local totalHeight = colorpickerSize.Y + windowSize.Y
-                                
-                                -- Verificar se clique foi fora do colorpicker
-                                local clickedInside = 
-                                    (mousePos.X >= colorpickerPos.X and mousePos.X <= colorpickerPos.X + colorpickerSize.X and
-                                     mousePos.Y >= colorpickerPos.Y and mousePos.Y <= colorpickerPos.Y + totalHeight)
-                                
-                                if not clickedInside then
-                                    closeColorPicker()
-                                end
+                local function connectRainbowInput()
+                    if rainbowInputConnection then rainbowInputConnection:Disconnect() end
+                    if rainbowMoveConnection then rainbowMoveConnection:Disconnect() end
+                    if rainbowEndConnection then rainbowEndConnection:Disconnect() end
+                    
+                    rainbowInputConnection = Colorpicker_RainbowBar.InputBegan:Connect(function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                            draggingColor = true
+                            updateColorSlider(input)
+                        end
+                    end)
+                    
+                    rainbowMoveConnection = UserInputService.InputChanged:Connect(function(input)
+                        if draggingColor and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                            updateColorSlider(input)
+                        end
+                    end)
+                    
+                    rainbowEndConnection = UserInputService.InputEnded:Connect(function(input)
+                        if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+                            draggingColor = false
+                        end
+                    end)
+                end
+                
+                local function closeColorPicker()
+                    isColorPickerOpen = false
+                    
+                    TweenService:Create(Colorpicker_Window, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                        Size = UDim2.new(1, 0, 0, 0)
+                    }):Play()
+                    
+                    delay(0.21, function()
+                        if not isColorPickerOpen then
+                            Colorpicker_Window.Visible = false
+                        end
+                    end)
+                    
+                    -- Desconectar eventos
+                    if selectorInputConnection then selectorInputConnection:Disconnect() end
+                    if selectorMoveConnection then selectorMoveConnection:Disconnect() end
+                    if selectorEndConnection then selectorEndConnection:Disconnect() end
+                    if rainbowInputConnection then rainbowInputConnection:Disconnect() end
+                    if rainbowMoveConnection then rainbowMoveConnection:Disconnect() end
+                    if rainbowEndConnection then rainbowEndConnection:Disconnect() end
+                    if closeConnection then closeConnection:Disconnect() end
+                end
+                
+                local function openColorPicker()
+                    isColorPickerOpen = true
+                    Colorpicker_Window.Visible = true
+                    
+                    TweenService:Create(Colorpicker_Window, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                        Size = UDim2.new(1, 0, 0, 125),
+                    }):Play()
+                    
+                    connectSelectorInput()
+                    connectRainbowInput()
+                    
+                    -- Fechar ao clicar fora (ADAPTADO para sua lib)
+                    closeConnection = UserInputService.InputBegan:Connect(function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                            local mousePos = input.Position
+                            local colorpickerPos = Colorpicker_F.AbsolutePosition
+                            local colorpickerSize = Colorpicker_F.AbsoluteSize
+                            local windowPos = Colorpicker_Window.AbsolutePosition
+                            local windowSize = Colorpicker_Window.AbsoluteSize
+                            
+                            local totalHeight = colorpickerSize.Y + windowSize.Y
+                            
+                            -- Verificar se clique foi fora do colorpicker
+                            local clickedInside = 
+                                (mousePos.X >= colorpickerPos.X and mousePos.X <= colorpickerPos.X + colorpickerSize.X and
+                                 mousePos.Y >= colorpickerPos.Y and mousePos.Y <= colorpickerPos.Y + totalHeight)
+                            
+                            if not clickedInside then
+                                closeColorPicker()
                             end
-                        end)
+                        end
                     end)
                 end
                 
                 -- Conectar clique para abrir/fechar
                 OnClick.MouseButton1Click:Connect(function()
-                    Spawn(function()
-                        if isColorPickerOpen then
-                            closeColorPicker()
-                        else
-                            openColorPicker()
-                        end
-                    end)
+                    if isColorPickerOpen then
+                        closeColorPicker()
+                    else
+                        openColorPicker()
+                    end
                 end)
                 
                 -- Inicializar com cor padrão
@@ -3532,7 +3509,9 @@ function Lib:Window(Settings)
                 function Colorpicker:SetColor(color)
                     if typeof(color) == "Color3" then
                         setInitialColor(color)
-                        pcall(Colorpicker.Settings.Callback, color)
+                        task.spawn(function()
+                            pcall(Colorpicker.Settings.Callback, color)
+                        end)
                     end
                     return self
                 end
